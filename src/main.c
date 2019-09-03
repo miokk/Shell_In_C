@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VERSION 0.1
+#include "functions.h"
 
 int main(void)
 {
@@ -15,10 +15,13 @@ int main(void)
     while (1)
     {
         printf("C:\\test\\fornow>");
-    	scanf("%s", command);
+        readInput(command, 255);
     	if (strcmp(command, "help") == 0)
     	{
-    		printf("Vous avez tape la commande help!\n");
+    		printf("You type the help command!\n");
+    		printf("That is fantastic!\n");
+    		printf("Dont worry, you will get soon the list of all available commands!\n");
+    		printf("Until now, just play with the 'version' command!\n");
     	}
     	else if (strcmp(command, "version") == 0)
     	{
