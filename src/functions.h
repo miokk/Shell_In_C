@@ -1,34 +1,34 @@
 #ifndef FUNCTIONS_H_
 #define FUNCTIONS_H_
 
-#define VERSION		 0.3
-#define NUMBER_LED	 10
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-typedef enum
+#define VERSION			0.4
+
+#define NUMBER_LED		10
+#define LED_ON			(int)1
+#define LED_OFF			(int)0
+
+typedef struct Ledstatus Ledstatus;
+struct Ledstatus
 {
-	LED_ID_0,
-	LED_ID_1,
-	LED_ID_2,
-	LED_ID_3,
-	LED_ID_4,
-	LED_ID_5,
-	LED_ID_6,
-	LED_ID_7,
-	LED_ID_8,
-	LED_ID_9,
-	LED_ID_10,
-	LED_ID_11,
-	LED_ID_12,
-	LED_ID_13,
-	LED_ID_14,
-	LED_ID_15,
-}LedID;
+    int ledState;
+    int blinkState;
+    clock_t startTimer;
+    int blinkDelay_ms;//set by user
+};
 
 //functions definitions
-int readInput(char *command, char *firstWord, char *secondWord, char *thirdWord, int length);
+int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord, char *FourthWord, int Length);
 void commandHelp(void);
 void commandVersion(void);
-void commandLed(char *SecondWord, char *ThirdWord);
+void commandLed(char *SecondWord, char *ThirdWord, char *FourthWord);
+void reverseLedState(int LedID);
+void test(void);
+void updateLEDState(void);
 
 //struct
 //typedef void (*TpDFSM_StateFunc)(void);

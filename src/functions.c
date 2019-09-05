@@ -1,13 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include "functions.h"
 
-//
-int Mask_led = 0;
+//16 LEDs
+Ledstatus LedStatus[16];
 
-int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord, int Length)
+int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord, char *FourthWord, int Length)
 {
 	char *tab = malloc(sizeof(char) * strlen(Command));
 	int returnValue;
@@ -39,6 +35,12 @@ int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord,
 					if (tab!=NULL)
 					{
 						strcpy(ThirdWord, tab);
+
+						tab = strtok(NULL, " ");
+						if (tab!=NULL)
+						{
+							strcpy(FourthWord, tab);
+						}
 					}
 				}
 			}
@@ -70,29 +72,37 @@ void commandVersion(void)
 	printf("Shell version %.2f!\n", version);
 }
 
-void commandLed(char *SecondWord, char *ThirdWord)
+void commandLed(char *SecondWord, char *ThirdWord, char *FourthWord)
 {
 	int i;
-	int mask;
+
 	if (strcmp(SecondWord, "on") == 0)
 	{
 		//enable led X
-		Mask_led |= 1<<atoi(ThirdWord);
+		LedStatus[atoi(ThirdWord)].ledState = LED_ON;
 		printf("LED%d is ON\n", atoi(ThirdWord));
 	}
 	else if (strcmp(SecondWord, "off") == 0)
 	{
 		//disable led X
-		Mask_led &= (int)~(1<<atoi(ThirdWord));
+		LedStatus[atoi(ThirdWord)].ledState = LED_OFF;
 		printf("LED%d is OFF\n", atoi(ThirdWord));
+	}
+	else if (strcmp(SecondWord, "start-blink") == 0)
+	{
+		//Activate Blink mode for X
+		LedStatus[atoi(ThirdWord)].blinkState = 1;
+		//get the start timer
+		LedStatus[atoi(ThirdWord)].startTimer = clock();
+		//Get the blink delay
+		LedStatus[atoi(ThirdWord)].blinkDelay_ms = atoi(FourthWord);
 	}
 	else if (strcmp(SecondWord, "status") == 0)
 	{
 		//show all the led status
 		for(i=0; i<16; i++)
 		{
-			mask = (Mask_led & (1<<i))>>i;
-			printf("LED%d is %d\n", i, mask);
+			printf("LED%d is %d\n", i, LedStatus[i].ledState);
 		}
 	}
 	else
@@ -101,3 +111,44 @@ void commandLed(char *SecondWord, char *ThirdWord)
 	}
 }
 
+void reverseLedState(int LedID)
+{
+	LedStatus[LedID].ledState=~LedStatus[LedID].ledState;
+	printf("LED%d changed to %d\n", LedID, LedStatus[LedID].ledState);
+}
+
+void test(void)
+{
+	clock_t start = clock(), diff;
+	reverseLedState(3);
+	diff = clock() - start;
+
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+}
+
+void updateLEDState(void)
+{
+	int i;
+	clock_t diff;
+
+	for(i=0; i<16; i++)
+	{
+		//check if blink mode is active
+		if (LedStatus[i].blinkState==1)
+		{
+			printf("active\n");
+			diff = clock() - LedStatus[i].startTimer;
+			diff = diff * 1000 / CLOCKS_PER_SEC;
+			printf("delay %d\n", LedStatus[i].blinkDelay_ms);
+			printf("startimer %d\n", (int)LedStatus[i].startTimer);
+			printf("clock() %d\n", (int)clock());
+
+			if(diff>LedStatus[i].blinkDelay_ms)
+			{
+				reverseLedState(i);
+				LedStatus[i].startTimer = clock();
+			}
+		}
+	}
+}

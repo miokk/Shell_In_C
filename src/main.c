@@ -10,6 +10,7 @@ int main(void)
     char first[255];
     char second[255];
     char third[255];
+    char fourth[255];
 
     printf("Hello and welcome to the shell made in C langage!\n");
     printf("Type help to see all the available command!\n");
@@ -17,7 +18,7 @@ int main(void)
     while (1)
     {
         printf("C:\\test\\fornow>");
-        readInput(command, first, second, third, 255);
+        readInput(command, first, second, third, fourth, 255);
     	if (strcmp(first, "help") == 0)
     	{
     		commandHelp();
@@ -28,7 +29,7 @@ int main(void)
     	}
     	else if (strcmp(first, "led") == 0)
     	{
-    		commandLed(second, third);
+    		commandLed(second, third, fourth);
     	}
     	else if (strcmp(command, "\n") == 0)
     	{
@@ -38,6 +39,9 @@ int main(void)
     	{
     		printf("%s is not a correct command, type help to list all the available commands!\n", first);
     	}
+
+    	//update LED state
+    	updateLEDState();
     }
     return 0;
 }
