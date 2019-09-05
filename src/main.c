@@ -7,7 +7,9 @@
 int main(void)
 {
     char command[255];
-    float version = 0.0;
+    char first[255];
+    char second[255];
+    char third[255];
 
     printf("Hello and welcome to the shell made in C langage!\n");
     printf("Type help to see all the available command!\n");
@@ -15,22 +17,26 @@ int main(void)
     while (1)
     {
         printf("C:\\test\\fornow>");
-        readInput(command, 255);
-    	if (strcmp(command, "help") == 0)
+        readInput(command, first, second, third, 255);
+    	if (strcmp(first, "help") == 0)
     	{
-    		printf("You type the help command!\n");
-    		printf("That is fantastic!\n");
-    		printf("Dont worry, you will get soon the list of all available commands!\n");
-    		printf("Until now, just play with the 'version' command!\n");
+    		commandHelp();
     	}
-    	else if (strcmp(command, "version") == 0)
+    	else if (strcmp(first, "version") == 0)
     	{
-    		version = VERSION;
-    		printf("Shell version %.2f!\n", version);
+    		commandVersion();
+    	}
+    	else if (strcmp(first, "led") == 0)
+    	{
+    		commandLed(second, third);
+    	}
+    	else if (strcmp(command, "\n") == 0)
+    	{
+    		//do nothing
     	}
     	else
     	{
-    		printf("command not available, type help to see all the available command!\n");
+    		printf("%s is not a correct command, type help to list all the available commands!\n", first);
     	}
     }
     return 0;
