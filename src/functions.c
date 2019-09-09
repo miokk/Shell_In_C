@@ -3,16 +3,68 @@
 //LEDs status
 Ledstatus LedStatus[NUMBER_LED];
 
-//debug
-int DebugEnable = 0;
+//debug ON/OFF
+int DebugEnable = 1;
+
+//structure with all commands
+CommandeDef *InputCommand[NUMBER_COMMAND];
+
+//string contain separate words of the command put by user
+char CommandWords[MAX_WORDS][MAX_LENGTH];
+
+////////////////////////////////////////////////////////////////////
+////////////This function initialize all the different//////////////
+////////////with their help instruction/////////////////////////////
+////////////////////////////////////////////////////////////////////
+void initCommand(void)
+{
+	int i;
+
+	for (i=0; i<NUMBER_COMMAND; i++)
+	{
+		InputCommand[i] = malloc(sizeof(CommandeDef));
+	}
+
+	////////////HELP////////////
+	InputCommand[0]->command = "help";
+	InputCommand[0]->commandhelp = "This command show all the available commands with the documentation.";
+	InputCommand[0]->function = commandHelp;
+
+	////////////VERSION////////////
+	InputCommand[1]->command = "version";
+	InputCommand[1]->commandhelp = "This command display the actual version of the software.";
+	InputCommand[1]->function = commandVersion;
+
+	////////////LED////////////
+	InputCommand[2]->command = "led";
+	InputCommand[2]->commandhelp = "This command needs to have argument(s):\n"
+			"        led on <led_id> => turn ON the LED ID X\n"
+			"        led off <led_id> => turn OFF the LED ID X\n"
+			"        led start-blink <led_id> <delay>: Blink led <led_id> with a <delay> in ms between on and off\n"
+			"        led stop-blink <led_id>: Stop the blinking led <led_id>\n"
+			"        led stop-blink all: Stop all the blinking leds";
+	InputCommand[2]->function = commandLed;
+
+	////////////PWD////////////
+	InputCommand[3]->command = "pwd";
+	InputCommand[3]->commandhelp = "This command shows the current working directory";
+	InputCommand[3]->function = commandPwd;
+
+	////////////DEBUG////////////
+	InputCommand[4]->command = "debug";
+	InputCommand[4]->commandhelp = "turn on/off the debug:\n"
+			"          debug on / debug off";
+	InputCommand[4]->function = commandDebug;
+}
 
 ////////////////////////////////////////////////////////////////////
 /////////////////////Manage the user commands'//////////////////////
 ////////////////////////////////////////////////////////////////////
-int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord, char *FourthWord, int Length)
+int readInput(char *Command, int Length)
 {
 	char *tab = malloc(sizeof(char) * strlen(Command));
 	int returnValue;
+	int i = 0;
 
 	// get the input from the user
 	if (fgets(Command, Length, stdin) != NULL)
@@ -30,24 +82,13 @@ int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord,
 			if (Command != NULL)
 			{
 				tab = strtok(Command, " ");
-				strcpy(FirstWord, tab);
-
+				strcpy(CommandWords[0], tab);
 				tab = strtok(NULL, " ");
-				if (tab!=NULL)
+				while(tab!=NULL)
 				{
-					strcpy(SecondWord, tab);
-
+					i++;
+					strcpy(CommandWords[i], tab);
 					tab = strtok(NULL, " ");
-					if (tab!=NULL)
-					{
-						strcpy(ThirdWord, tab);
-
-						tab = strtok(NULL, " ");
-						if (tab!=NULL)
-						{
-							strcpy(FourthWord, tab);
-						}
-					}
 				}
 			}
 		}
@@ -70,10 +111,12 @@ int readInput(char *Command, char *FirstWord, char *SecondWord, char *ThirdWord,
 ////////////////////////////////////////////////////////////////////
 void commandHelp(void)
 {
-	printf("You type the help command!\n");
-	printf("That is fantastic!\n");
-	printf("Dont worry, you will get soon the list of all available commands!\n");
-	printf("Until now, just play with the 'version' command!\n");
+	int i;
+	printf("This is all the available commands:\n");
+	for (i=0; i<NUMBER_COMMAND; i++)
+	{
+		printf("- %s : %s\n", InputCommand[i]->command, InputCommand[i]->commandhelp);
+	}
 }
 ////////////////////////////////////////////////////////////////////
 
@@ -90,37 +133,62 @@ void commandVersion(void)
 ////////////////////////////////////////////////////////////////////
 /////////////////function for the command 'led + X'////////////////
 ////////////////////////////////////////////////////////////////////
-void commandLed(char *SecondWord, char *ThirdWord, char *FourthWord)
+void commandLed(void)
 {
 	int i;
 
-	if (strcmp(SecondWord, "on") == 0)
+	//"led on" command
+	if (strcmp(CommandWords[1], "on") == 0)
 	{
 		//enable led X
-		LedStatus[atoi(ThirdWord)].ledState = LED_ON;
-		printf("LED%d is ON\n", atoi(ThirdWord));
+		LedStatus[atoi(CommandWords[2])].ledState = LED_ON;
+		printf("LED%d is ON\n", atoi(CommandWords[2]));
 	}
-	else if (strcmp(SecondWord, "off") == 0)
+	//"led off" command
+	else if (strcmp(CommandWords[1], "off") == 0)
 	{
 		//disable led X
-		LedStatus[atoi(ThirdWord)].ledState = LED_OFF;
-		printf("LED%d is OFF\n", atoi(ThirdWord));
+		LedStatus[atoi(CommandWords[2])].ledState = LED_OFF;
+		printf("LED%d is OFF\n", atoi(CommandWords[2]));
 	}
-	else if (strcmp(SecondWord, "start-blink") == 0)
+	//"led start-blink" command
+	else if (strcmp(CommandWords[1], "start-blink") == 0)
 	{
-		//Activate Blink mode for X
-		LedStatus[atoi(ThirdWord)].blinkState = 1;
-		//get the start timer
-		LedStatus[atoi(ThirdWord)].startTimer = clock();
-		//Get the blink delay
-		LedStatus[atoi(ThirdWord)].blinkDelay_ms = atoi(FourthWord);
+		if (((atoi(CommandWords[2])>0) && (atoi(CommandWords[2])<NUMBER_LED)) ||
+				(strcmp(CommandWords[2], "0") == 0))
+		{
+			//Activate Blink mode for X
+			LedStatus[atoi(CommandWords[2])].blinkState = 1;
+			//get the start timer
+			LedStatus[atoi(CommandWords[2])].startTimer = clock();
+			if ((atoi(CommandWords[3])>0) && (atoi(CommandWords[3])<100000))
+			{
+				//Get the blink delay
+				LedStatus[atoi(CommandWords[2])].blinkDelay_ms = atoi(CommandWords[3]);
+			}
+		}
+		else
+		{
+			printf("Problem, \'%s\' is incorrect. Type help to list all the available commands\n", CommandWords[2]);
+		}
 	}
-	else if (strcmp(SecondWord, "stop-blink") == 0)
+	else if (strcmp(CommandWords[1], "stop-blink") == 0)
 	{
-		//Activate Blink mode for X
-		LedStatus[atoi(ThirdWord)].blinkState = 0;
+		if (strcmp(CommandWords[2], "all") == 0)
+		{
+			//disable all blink led
+			for(i=0; i<NUMBER_LED; i++)
+			{
+				LedStatus[i].blinkState = 0;
+			}
+		}
+		else
+		{
+			//Activate Blink mode for X
+			LedStatus[atoi(CommandWords[2])].blinkState = 0;
+		}
 	}
-	else if (strcmp(SecondWord, "status") == 0)
+	else if (strcmp(CommandWords[1], "status") == 0)
 	{
 		//show all the led status
 		for(i=0; i<NUMBER_LED; i++)
@@ -130,17 +198,37 @@ void commandLed(char *SecondWord, char *ThirdWord, char *FourthWord)
 	}
 	else
 	{
-		printf("Problem, \'%s\' is incorrect. Type help to list all the available commands\n", SecondWord);
+		printf("Problem, \'%s\' is incorrect. Type help to list all the available commands\n", CommandWords[1]);
 	}
+}
+/////////////////////////////////END////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+//////////////function which display current directory//////////////
+////////////////////////////////////////////////////////////////////
+void commandPwd(void)
+{
+	char cwd[PATH_MAX];
+	getcwd(cwd, sizeof(cwd));
+	printf("Current working directory: %s\n", cwd);
+}
+/////////////////////////////////END////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+///////////////////function for not valid command///////////////////
+////////////////////////////////////////////////////////////////////
+void commandotValid(void)
+{
+	printf("%s is not a correct command, type help to list all the available commands!\n", CommandWords[0]);
 }
 /////////////////////////////////END////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////function to activate the debug//////////////////
 ////////////////////////////////////////////////////////////////////
-void commandDebug(char *SecondWord)
+void commandDebug(void)
 {
-	if (strcmp(SecondWord, "on") == 0)
+	if (strcmp(CommandWords[1], "on") == 0)
 	{
 		//enable led X
 		DebugEnable = 1;
@@ -160,6 +248,7 @@ void commandDebug(char *SecondWord)
 void reverseLedState(int LedID)
 {
 	LedStatus[LedID].ledState=!LedStatus[LedID].ledState;
+	//print the state change when debug is enable
 	if (DebugEnable==1)
 	{
 		printf("LED%d changed to %d\n", LedID, LedStatus[LedID].ledState);
@@ -172,44 +261,52 @@ void reverseLedState(int LedID)
 ////////////////////////////////////////////////////////////////////
 void* threadUpdateShell (void* arg)
 {
+	char cwd[PATH_MAX];
 	char command[255];
-	char first[255];
-	char second[255];
-	char third[255];
-	char fourth[255];
+	int i;
+	int isCommandFound = 0;//flag indicate if the command provided by the user is correct or not
 
-	printf("Hello and welcome to the shell made in C langage!\n");
+	//initialize all the commands
+	initCommand();
+
+	printf("Hello and welcome to the shell made in C language!\n");
 	printf("Type help to see all the available command!\n");
 
 	while (1)
 	{
-		printf("C:\\test\\fornow>");
-		readInput(command, first, second, third, fourth, 255);
-		if (strcmp(first, "help") == 0)
+		//reset isCommandFound
+		isCommandFound = 0;
+
+		getcwd(cwd, sizeof(cwd));
+		printf("%s>", cwd);
+
+		*CommandWords[0] = 0;
+		readInput(command, 255);
+
+		//loop on all commands
+		for (i=0; i<NUMBER_COMMAND; i++)
 		{
-			commandHelp();
+			if (strcmp(CommandWords[0], InputCommand[i]->command) == 0)
+			{
+				InputCommand[i]->function();
+				isCommandFound = 1;
+			}
+			else if (strcmp(CommandWords[0], "") == 0)
+			{
+				isCommandFound = 1;
+			}
 		}
-		else if (strcmp(first, "version") == 0)
+
+		if (isCommandFound==0)
 		{
-			commandVersion();
+			//command not found
+			commandotValid();
 		}
-		else if (strcmp(first, "led") == 0)
-		{
-			commandLed(second, third, fourth);
-		}
-		else if (strcmp(first, "debug") == 0)
-		{
-			commandDebug(second);
-		}
-		else if (strcmp(command, "\n") == 0)
-		{
-			//do nothing
-		}
-		else
-		{
-			printf("%s is not a correct command, type help to list all the available commands!\n", first);
-		}
+
 	}
+
+	//never called for now
+	free(InputCommand);
 }
 /////////////////////////////////END////////////////////////////////
 
@@ -231,6 +328,7 @@ void* threadUpdateLEDState (void* arg)
 				diff = clock() - LedStatus[i].startTimer;
 				diff = diff * 1000 / CLOCKS_PER_SEC;
 
+				//reverse the state when timer > delay
 				if(diff>LedStatus[i].blinkDelay_ms)
 				{
 					reverseLedState(i);
@@ -241,3 +339,4 @@ void* threadUpdateLEDState (void* arg)
 	}
 }
 /////////////////////////////////END////////////////////////////////
+

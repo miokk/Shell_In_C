@@ -3,7 +3,7 @@
 #include <string.h>
 #include "functions.h"
 
-#define HAVE_STRUCT_TIMESPEC //prevent redefinition of timespec
+#define HAVE_STRUCT_TIMESPEC //prevent redefinition of structure timespec
 #include <pthread.h>
 
 int main(void)
@@ -21,4 +21,5 @@ int main(void)
 
 	return 0;
 }
+
 
